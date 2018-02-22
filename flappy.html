@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+ 
+	 <style>
+
+
+body {
+  font-size: 14px;
+}
+
+p {
+  font-size: 90%;
+  line-height: 25px;
+}
+
+
+.window {
+	height: 450px;
+	background: url('./background.png');
+	position: relative;
+	overflow: hidden;
+  margin-bottom: 10px;
+}
+
+
+.score {
+  position: absolute;
+  width: 100%;
+  display: block;
+  text-align: center;
+  font-size: 250%;
+  padding-top: 20px;
+  color: #fff;
+  z-index: 4;
+ 
+  
+ 
+}
+
+
+.bird {
+	height: 28px;
+	width: 40px;
+	background: url('./bird.png');
+	position: absolute;
+	bottom: 50%;
+	left: 130px;
+	animation: birdFlap 0.2s steps(3, end) infinite alternate;
+	transition: transform 0.3s;
+}
+
+@keyframes birdFlap {  
+  0% {background-position: 0 84px;}
+  100% {background-position: 0 0;}
+}
+
+
+
+.pipe {
+	width: 60px;
+	height: 100%;
+	position: absolute;
+	right: -60px;
+	
+	
+}
+
+
+
+.pipe .top {
+	background: url('./tubo.png') bottom;
+	position: absolute;
+	top: 0;
+	width: 100%;
+}
+
+.pipe .bottom {
+	background: url('./tubo.png') ;
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}	
+	 
+    </style>
+	 </head>
+	<body >
+	
+  <div class="window">
+    <p class="score">0</p>
+	<div class="bird"></div>
+  </div>
+  
+  <p>Click/Apreta espacio para empezar. F5 para recargar.</p>
+
+	<script src="https://code.jquery.com/jquery-3.2.1.min.js"  crossorigin="anonymous"></script>
+	<script type="text/javascript">
+	
+	
+$(function(){
+	$window = $('.window');
+	$bird = $('.bird');
+	caida = 1000;
+	ancho = 120;
+	gameState = 2;
+	var i = 0;
+
+	var int = setInterval(function(){
+    if(gameState == 1){
+      spawnPipe();
+      movePipes();
+    }
+  }, 1300);
+  
+  var birdPosInterval = setInterval(function(){ 
+    if(gameState == 1){
+      positionbird();
+    }
+  }, 10);
+
+	$window.mousedown(function(){
+		birdFlap();
+    if(gameState == 2){
+      gameState = 1;
+      deleteInterval();
+    }
+	});
+  
+	$(window).keydown(function(tecla){
+		if(tecla.keyCode == 32){
+			birdFlap();
+      
+      if(gameState == 2){
+        gameState = 1;
+        deleteInterval();
+      }
+		}
+	});
+
+  function deleteInterval(){
+		var int= setInterval(function(){ 
+        if(gameState == 1){
+          deletePipe();
+        }
+      }, 7000);
+  }
+  
+	function birdFlap(){
+    if(gameState == 1 || gameState == 2){
+      $bird.css('transform', 'rotate(-20deg)');
+		  $bird.stop().animate({
+			  bottom: '+=60px'
+  		}, 200, function(){
+        positionbird();
+        $bird.css('transform', 'rotate(0deg)');
+		  	$bird.stop().animate({
+			    bottom: '-=60px'
+  		  }, 300, 'linear', function(){
+          positionbird();
+          gravity();
+        });
+	  	});
+    }
+	}
+
+	function gravity(){
+    birdPorcent = parseInt($bird.css('bottom')) / $window.height();
+    totalcaida = caida * birdPorcent;
+		$bird.stop().animate({
+			bottom: '0'
+		}, totalcaida, 'linear');
+
+    $bird.css('transform', 'rotate(90deg)');
+	}
+
+	function spawnPipe(){
+		pipeTopHeight = Math.floor(Math.random() * ($window.height() - 250)+ 50);
+		pipeBottomHeight = $window.height() - (pipeTopHeight + ancho);
+		pipe = '<div class="pipe"><div style="height: ' + pipeTopHeight + 'px" class="top"></div><div style="height:' + pipeBottomHeight + 'px" class="bottom"></div></div>';
+		$window.append(pipe);
+	}
+
+	function deletePipe(){
+		$('.window .pipe').first().remove();
+	}
+
+	function movePipes(){
+		$('.pipe').each(function(){
+			$(this).animate({
+				right: '+=160px'
+			}, 1300, 'linear');
+		});
+	}
+  
+  function positionbird(){
+    if(parseInt($bird.css('bottom')) == 0){
+      gameOver();
+    }
+	
+	var birdpos = $bird[0].getBoundingClientRect();
+	 $('.pipe').each(function(){
+		var pospipe = this.getBoundingClientRect();
+		if (pospipe.left <= birdpos.right && pospipe.right >= birdpos.right){
+              $(this).children('.top').each(function(){
+                var pospipe = this.getBoundingClientRect();
+                if (pospipe.bottom >= birdpos.top){
+                gameOver()
+                }
+              });
+			  $(this).children('.bottom').each(function(){
+                var pospipe = this.getBoundingClientRect();
+                if (pospipe.top <= birdpos.bottom){
+                 gameOver() 
+                }
+              });
+
+            }
+			if (pospipe.left < birdpos.left && pospipe.right > birdpos.right && !$(this).hasClass('scored')){
+				i++;
+				$('.score').text(i);
+				$(this).addClass('scored');
+			
+			}
+		});
+   
+  }
+  
+  function gameOver(){
+  	clearInterval(birdPosInterval);
+  	$('.pipe').stop();
+  	gameState = 0;
+  }
+})
+
+	</script>
+	
+  </body>
+</html>
